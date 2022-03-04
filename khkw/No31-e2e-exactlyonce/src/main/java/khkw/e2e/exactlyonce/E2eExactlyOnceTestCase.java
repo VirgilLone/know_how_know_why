@@ -41,11 +41,11 @@ public class E2eExactlyOnceTestCase {
         env.setRestartStrategy(
                 RestartStrategies.fixedDelayRestart(3, Time.of(1, TimeUnit.MILLISECONDS) ));
 
-//        atMostOnce(env);
-//        atLeastOnce(env);
-//        exactlyOnce(env);
-        exactlyOnce2(env);
-//        e2eExactlyOnce(env);
+//        atMostOnce(env);// 1.程序重启到恢复，期间的数据就会丢失
+//        atLeastOnce(env);// 2.程序重启到恢复，期间的数据很可能会发生重放，导致flink内部重复处理数据
+//        exactlyOnce(env);// 3.程序重启到恢复，设置EXACTLY_ONCE，，数据在flink内部没有重复
+//        exactlyOnce2(env);// 4.程序重启到恢复，数据同样在flink内部没有重复，但是添加了sink，导致sink会有重复
+        e2eExactlyOnce(env);
 
         env.execute("E2e-Exactly-Once");
     }
@@ -101,6 +101,12 @@ public class E2eExactlyOnceTestCase {
         baseLogic(env).addSink(new E2EExactlyOnceSinkFunction()).name("E2E-ExactlyOnceSink");
     }
 
+    /**
+     * source + map
+     * map阶段，做完一次cp就触发一次异常
+     * @param env
+     * @return
+     */
     private static KeyedStream<Tuple3<String, Long, String>, String> baseLogic(StreamExecutionEnvironment env) {
         DataStreamSource<Tuple3<String, Long, String>> source1 =
                 env.addSource(new ParallelCheckpointedSource("S1"));
