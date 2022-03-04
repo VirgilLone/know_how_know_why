@@ -12,9 +12,9 @@ import java.util.UUID;
  * 项目名称: Apache Flink 知其然，知其所以然 - khkw.e2e.exactlyonce.functions
  * 功能描述: 端到端的精准一次语义sink示例（测试）
  * TwoPhaseCommitSinkFunction有4个方法:
- * - beginTransaction() Call on initializeState/snapshotState
+ * - beginTransaction() Call on initializeState/snapshotState 开启新的cp的时候需要开启一个事务
  * - preCommit() Call on snapshotState
- * - commit()  Call on notifyCheckpointComplete()
+ * - commit()  Call on notifyCheckpointComplete（CheckpointListener）
  * - abort() Call on close()
  * <p>
  * 作者： 孙金城
@@ -33,7 +33,7 @@ public class E2EExactlyOnceSinkFunction extends
     }
 
     /**
-     * Call on initializeState
+     * Call on initializeState/snapshotState
      */
     @Override
     protected TransactionTable beginTransaction() {
@@ -42,7 +42,7 @@ public class E2EExactlyOnceSinkFunction extends
     }
 
     /**
-     * Call on snapshotState
+     * Call on snapshotState 开始做cp的时候，临时存储的位置，这里是做flush方法
      */
     @Override
     protected void preCommit(TransactionTable table) throws Exception {
@@ -51,7 +51,7 @@ public class E2EExactlyOnceSinkFunction extends
     }
 
     /**
-     * Call on notifyCheckpointComplete()
+     * Call on notifyCheckpointComplete() 做完cp的时候调用
      */
     @Override
     protected void commit(TransactionTable table) {

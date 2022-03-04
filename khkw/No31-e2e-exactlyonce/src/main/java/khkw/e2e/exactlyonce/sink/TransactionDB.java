@@ -15,6 +15,7 @@ import java.util.*;
  */
 public class TransactionDB {
     private static Logger LOG = LoggerFactory.getLogger(TransactionDB.class);
+
     private final Map<String, List<Tuple3<String, Long, String>>> transactionRecords = new HashMap<>();
 
     private static TransactionDB instance;
@@ -29,7 +30,7 @@ public class TransactionDB {
     private TransactionDB() {}
 
     /**
-     * 创建当前事物的临时存储
+     * 创建当前事务id并临时存储
      */
     public TransactionTable createTable(String transactionId) {
         LOG.error(String.format("Create Table for current transaction...[%s]", transactionId));
@@ -38,7 +39,7 @@ public class TransactionDB {
     }
 
     /**
-     *
+     * 这里的逻辑要尽量简单，最好是外部一个指令。时间和稳定性要求很高
      */
     public void secondPhase(String transactionId) {
         LOG.error(String.format("Persist current transaction...[%s] records...", transactionId));
@@ -47,13 +48,13 @@ public class TransactionDB {
             return;
         }
         content.forEach(this::print);
-        // 提醒大家，这个非常重要，因为Notify 和 Recovery都会调用。
+        // 提醒大家，这个非常重要，因为Notify 和 Recovery都会调用。恢复的时候不清空，外部sink就会出现重复写
         removeTable("Notify or Recovery", transactionId);
         LOG.error(String.format("Persist current transaction...[%s] records...[SUCCESS]", transactionId));
     }
 
     private void print(Tuple3<String, Long, String> record){
-        LOG.error(record.toString());
+        LOG.error("====={}",record.toString());
     }
 
     public void firstPhase(String transactionId, List<Tuple3<String, Long, String>> values) {
